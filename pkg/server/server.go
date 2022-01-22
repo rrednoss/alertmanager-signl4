@@ -19,15 +19,23 @@ func NewServer() *http.Server {
 func handleAlert(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "HEAD":
-		w.WriteHeader(http.StatusOK)
+		handleHEAD(w, r)
 	case "POST":
-		buf := make([]byte, 2048)
-		if _, err := r.Body.Read(buf); err == io.EOF {
-			w.WriteHeader(http.StatusBadRequest)
-		} else {
-			w.WriteHeader(http.StatusOK)
-		}
+		handlePOST(w, r)
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
+}
+
+func handleHEAD(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+}
+
+func handlePOST(w http.ResponseWriter, r *http.Request) {
+	buf := make([]byte, 2048)
+	if _, err := r.Body.Read(buf); err == io.EOF {
+		w.WriteHeader(http.StatusBadRequest)
+	} else {
+		w.WriteHeader(http.StatusOK)
 	}
 }
