@@ -1,7 +1,8 @@
 package main
 
-import "fmt"
+import "github.com/rrednoss/alertmanager-signl4/pkg/server"
 
 func main() {
-	fmt.Println("Hello World!")
+	s := server.NewServer()
+	s.ListenAndServe()
 }
