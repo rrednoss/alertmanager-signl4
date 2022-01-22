@@ -1,6 +1,7 @@
 package server
 
 import (
+	"io"
 	"net/http"
 	"time"
 )
@@ -20,7 +21,12 @@ func handleAlert(w http.ResponseWriter, r *http.Request) {
 	case "HEAD":
 		w.WriteHeader(http.StatusOK)
 	case "POST":
-		w.WriteHeader(http.StatusOK)
+		buf := make([]byte, 2048)
+		if _, err := r.Body.Read(buf); err == io.EOF {
+			w.WriteHeader(http.StatusBadRequest)
+		} else {
+			w.WriteHeader(http.StatusOK)
+		}
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
