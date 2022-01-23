@@ -1,15 +1,13 @@
 package server
 
 import (
-	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"strings"
 	"testing"
 )
 
-func TestStatusCodesHandleAlert(t *testing.T) {
+func TestHandleAlertHttpMethods(t *testing.T) {
 	tests := []struct {
 		name                   string
 		method                 string
@@ -17,16 +15,10 @@ func TestStatusCodesHandleAlert(t *testing.T) {
 		expectedHTTPStatusCode int
 	}{
 		{
-			name:                   "accept POST with body",
+			name:                   "accept POST",
 			method:                 http.MethodPost,
-			body:                   strings.NewReader("{'key':'value'}"),
+			body:                   strings.NewReader("{\"key\":\"value\"}"),
 			expectedHTTPStatusCode: http.StatusOK,
-		},
-		{
-			name:                   "refuse POST with empty body",
-			method:                 http.MethodPost,
-			body:                   strings.NewReader(""),
-			expectedHTTPStatusCode: http.StatusBadRequest,
 		},
 		{
 			name:                   "accept HEAD",
@@ -62,7 +54,6 @@ func TestStatusCodesHandleAlert(t *testing.T) {
 			handleAlert(response, request)
 
 			got := response.Code
-
 			if got != tt.expectedHTTPStatusCode {
 				t.Errorf("got %d, expected %d", got, tt.expectedHTTPStatusCode)
 			}
@@ -70,44 +61,35 @@ func TestStatusCodesHandleAlert(t *testing.T) {
 	}
 }
 
-func TestPostHandleAlert(t *testing.T) {
+func TestHandleAlertPostMethod(t *testing.T) {
 	tests := []struct {
 		name                   string
-		method                 string
-		filename               string
+		body                   *strings.Reader
 		expectedHTTPStatusCode int
 	}{
 		{
-			name:                   "should read valid JSON",
-			method:                 http.MethodPost,
-			filename:               "example-alert-valid.json",
+			name:                   "should accept POST with payload",
+			body:                   strings.NewReader("{\"key\":\"value\"}"),
 			expectedHTTPStatusCode: http.StatusOK,
 		},
 		{
-			name:                   "should refuse invalid JSON",
-			method:                 http.MethodPost,
-			filename:               "example-alert-invalid.json",
+			name:                   "should refuse POST without payload",
+			body:                   strings.NewReader(""),
 			expectedHTTPStatusCode: http.StatusBadRequest,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			wd, err := os.Getwd()
-			if err != nil {
-				t.Error("can't get working directory", err)
-			}
-
-			json, err := os.Open(fmt.Sprintf("%s/%s", wd, tt.filename))
-			if err != nil {
-				t.Errorf("missing file: %s", tt.filename)
-			}
-
-			request, _ := http.NewRequest(tt.method, "/", json)
+			request, _ := http.NewRequest(http.MethodPost, "/", tt.body)
 			response := httptest.NewRecorder()
 
 			handleAlert(response, request)
 
+			got := response.Code
+			if got != tt.expectedHTTPStatusCode {
+				t.Errorf("got %d, expected %d", got, tt.expectedHTTPStatusCode)
+			}
 		})
 	}
 }

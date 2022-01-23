@@ -2,7 +2,7 @@ package server
 
 import (
 	"encoding/json"
-	"io"
+	"fmt"
 	"net/http"
 	"time"
 )
@@ -24,7 +24,7 @@ func handleAlert(w http.ResponseWriter, r *http.Request) {
 	case "POST":
 		handlePOST(w, r)
 	default:
-		w.WriteHeader(http.StatusMethodNotAllowed)
+		http.Error(w, fmt.Sprintf("the HTTP method %s is not allowed", r.Method), http.StatusMethodNotAllowed)
 	}
 }
 
@@ -33,30 +33,13 @@ func handleHEAD(w http.ResponseWriter, r *http.Request) {
 }
 
 func handlePOST(w http.ResponseWriter, r *http.Request) {
-	buf := make([]byte, 2048)
-	if n, err := r.Body.Read(buf); n == 0 && err == io.EOF {
-		w.WriteHeader(http.StatusBadRequest)
-	} else {
-		n := &notification{}
-		d := json.NewDecoder(r.Body)
-		if err := d.Decode(&n); err != nil && err != io.EOF {
-			w.WriteHeader(http.StatusBadRequest)
-		}
-		w.Write([]byte("Success"))
+	var alert map[string]interface{}
+	dec := json.NewDecoder(r.Body)
+	if err := dec.Decode(&alert); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
 	}
-}
 
-type notification struct {
-	Status string  `json:"status"`
-	Alerts []alert `json:"alerts"`
-}
-
-type alert struct {
-	Status string `json:"status"`
-	Labels labels `json:"labels"`
-}
-
-type labels struct {
-	Alertname string `json:"alertname"`
-	Severity  string `json:"severity"`
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("success"))
 }
