@@ -36,6 +36,7 @@ func handlePOST(w http.ResponseWriter, r *http.Request) {
 	headerContentType := r.Header.Get("Content-Type")
 	if headerContentType != "application/json" {
 		http.Error(w, "invalid Content-Type header", http.StatusUnsupportedMediaType)
+		return
 	}
 
 	var alert map[string]interface{}
