@@ -11,12 +11,14 @@ func TestHandleAlertHttpMethods(t *testing.T) {
 	tests := []struct {
 		name                   string
 		method                 string
+		header                 http.Header
 		body                   *strings.Reader
 		expectedHTTPStatusCode int
 	}{
 		{
 			name:                   "accept POST",
 			method:                 http.MethodPost,
+			header:                 http.Header{"Content-Type": []string{"application/json"}},
 			body:                   strings.NewReader("{\"key\":\"value\"}"),
 			expectedHTTPStatusCode: http.StatusOK,
 		},
@@ -49,6 +51,7 @@ func TestHandleAlertHttpMethods(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			request, _ := http.NewRequest(tt.method, "/", tt.body)
+			request.Header = tt.header
 			response := httptest.NewRecorder()
 
 			handleAlert(response, request)
@@ -61,27 +64,74 @@ func TestHandleAlertHttpMethods(t *testing.T) {
 	}
 }
 
-func TestHandleAlertPostMethod(t *testing.T) {
+func TestHandleAlertPostHeader(t *testing.T) {
 	tests := []struct {
 		name                   string
+		header                 http.Header
 		body                   *strings.Reader
 		expectedHTTPStatusCode int
 	}{
 		{
-			name:                   "should accept POST with payload",
+			name:                   "should accept POST with Content-Type header",
+			header:                 http.Header{"Content-Type": []string{"application/json"}},
 			body:                   strings.NewReader("{\"key\":\"value\"}"),
 			expectedHTTPStatusCode: http.StatusOK,
 		},
 		{
-			name:                   "should refuse POST without payload",
-			body:                   strings.NewReader(""),
-			expectedHTTPStatusCode: http.StatusBadRequest,
+			name:                   "should refuse POST without Content-Type header",
+			header:                 nil,
+			body:                   strings.NewReader("{\"key\":\"value\"}"),
+			expectedHTTPStatusCode: http.StatusUnsupportedMediaType,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			request, _ := http.NewRequest(http.MethodPost, "/", tt.body)
+			request.Header = tt.header
+			response := httptest.NewRecorder()
+
+			handleAlert(response, request)
+
+			got := response.Code
+			if got != tt.expectedHTTPStatusCode {
+				t.Errorf("got %d, expected %d", got, tt.expectedHTTPStatusCode)
+			}
+		})
+	}
+}
+
+func TestHandleAlertPostBody(t *testing.T) {
+	tests := []struct {
+		name                   string
+		header                 http.Header
+		body                   *strings.Reader
+		expectedHTTPStatusCode int
+	}{
+		{
+			name:                   "should accept POST with payload and Content-Type header",
+			header:                 http.Header{"Content-Type": []string{"application/json"}},
+			body:                   strings.NewReader("{\"key\":\"value\"}"),
+			expectedHTTPStatusCode: http.StatusOK,
+		},
+		{
+			name:                   "should refuse POST without payload but Content-Type header",
+			header:                 http.Header{"Content-Type": []string{"application/json"}},
+			body:                   strings.NewReader(""),
+			expectedHTTPStatusCode: http.StatusBadRequest,
+		},
+		{
+			name:                   "should refuse POST with missing Content-Type header",
+			header:                 http.Header{"Content-Type": []string{"application/json"}},
+			body:                   strings.NewReader("{\"key\":\"value\"}"),
+			expectedHTTPStatusCode: http.StatusOK,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			request, _ := http.NewRequest(http.MethodPost, "/", tt.body)
+			request.Header = tt.header
 			response := httptest.NewRecorder()
 
 			handleAlert(response, request)
