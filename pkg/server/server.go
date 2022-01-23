@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -33,19 +34,33 @@ func handleHEAD(w http.ResponseWriter, r *http.Request) {
 }
 
 func handlePOST(w http.ResponseWriter, r *http.Request) {
+	if err := handlePOSTHeader(w, r); err != nil {
+		return
+	}
+	if err := handlePOSTBody(w, r); err != nil {
+		return
+	}
+}
+
+func handlePOSTHeader(w http.ResponseWriter, r *http.Request) error {
 	headerContentType := r.Header.Get("Content-Type")
 	if headerContentType != "application/json" {
 		http.Error(w, "invalid Content-Type header", http.StatusUnsupportedMediaType)
-		return
+		return errors.New("invalid Content-Type header")
 	}
+	return nil
+}
 
+func handlePOSTBody(w http.ResponseWriter, r *http.Request) error {
 	var alert map[string]interface{}
 	dec := json.NewDecoder(r.Body)
 	if err := dec.Decode(&alert); err != nil {
 		http.Error(w, "invalid request body", http.StatusBadRequest)
-		return
+		return errors.New("invalid request body")
 	}
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("success"))
+
+	return nil
 }
