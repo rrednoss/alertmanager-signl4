@@ -109,22 +109,16 @@ func TestHandleAlertPostBody(t *testing.T) {
 		expectedHTTPStatusCode int
 	}{
 		{
-			name:                   "should accept POST with payload and Content-Type header",
+			name:                   "should accept POST with payload",
 			header:                 http.Header{"Content-Type": []string{"application/json"}},
 			body:                   strings.NewReader("{\"key\":\"value\"}"),
 			expectedHTTPStatusCode: http.StatusOK,
 		},
 		{
-			name:                   "should refuse POST without payload but Content-Type header",
+			name:                   "should refuse POST without payload",
 			header:                 http.Header{"Content-Type": []string{"application/json"}},
 			body:                   strings.NewReader(""),
 			expectedHTTPStatusCode: http.StatusBadRequest,
-		},
-		{
-			name:                   "should refuse POST with missing Content-Type header",
-			header:                 http.Header{"Content-Type": []string{"application/json"}},
-			body:                   strings.NewReader("{\"key\":\"value\"}"),
-			expectedHTTPStatusCode: http.StatusOK,
 		},
 	}
 
