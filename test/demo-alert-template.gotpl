@@ -1,0 +1,5 @@
+{
+    "name": "{{ .Name }}",
+    "severity": "{{ .Severity }}",
+    "status": "{{ .Status }}"
+}
