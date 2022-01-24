@@ -4,9 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/http"
-	"os"
 	"time"
 )
 
@@ -64,16 +62,10 @@ func handlePOSTBody(w http.ResponseWriter, r *http.Request) error {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("success"))
 
-	// TODO (rednoss): Refactor!
-	wd, err := os.Getwd()
-	if err != nil {
-		panic(err)
-	}
-	template, err := ioutil.ReadFile(wd + "/templates/signl4.gotpl")
-	if err != nil {
-		panic(err)
-	}
-	transformAlert(string(template), alert)
-
 	return nil
 }
+
+// TODO (rednoss): Next step -> call the transform method to transform the POST body
+// func transformBody(body string) string {
+// 	return ""
+// }

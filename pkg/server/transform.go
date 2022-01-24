@@ -1,14 +1,15 @@
 package server
 
 import (
-	"html/template"
-	"os"
+	"bytes"
+	"text/template"
 )
 
-func transformAlert(alert string, input map[string]interface{}) {
-	t := template.Must(template.New("alert").Parse(alert))
-	err := t.Execute(os.Stdout, input)
-	if err != nil {
-		panic(err)
+func transform(gotpl string, input map[string]interface{}) (string, error) {
+	t := template.Must(template.New("alert").Parse(gotpl))
+	var b bytes.Buffer
+	if err := t.Execute(&b, input); err != nil {
+		return "", err
 	}
+	return b.String(), nil
 }
