@@ -118,7 +118,7 @@ func TestHandleAlertPostBody(t *testing.T) {
 			name:                   "should refuse POST without payload",
 			header:                 http.Header{"Content-Type": []string{"application/json"}},
 			body:                   strings.NewReader(""),
-			expectedHTTPStatusCode: http.StatusBadRequest,
+			expectedHTTPStatusCode: http.StatusInternalServerError,
 		},
 	}
 

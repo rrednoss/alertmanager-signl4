@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -41,8 +41,7 @@ func handlePOST(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := handlePOSTBody(w, r); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		log.Fatal(err)
+		http.Error(w, fmt.Sprintf("error processing the request %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
 }
@@ -59,14 +58,18 @@ func handlePOSTHeader(w http.ResponseWriter, r *http.Request) error {
 func handlePOSTBody(w http.ResponseWriter, r *http.Request) error {
 	alert, err := decodeBody(r.Body)
 	if err != nil {
+		fmt.Println("FUCK 1")
 		return err
 	}
-	gotpl, err := getTemplate("signl4.gotpl")
+	root := getRepositoryRootPath()
+	gotpl, err := getTemplate(root, "signl4.gotpl")
 	if err != nil {
+		fmt.Println("FUCK 2")
 		return err
 	}
 	tAlert, err := transform(gotpl, alert)
 	if err != nil {
+		fmt.Println("FUCK 3")
 		return err
 	}
 
@@ -81,15 +84,26 @@ func decodeBody(body io.ReadCloser) (map[string]interface{}, error) {
 
 	d := json.NewDecoder(body)
 	if err := d.Decode(&alert); err != nil {
+		fmt.Println("FUCK 4")
 		return nil, err
 	}
 	return alert, nil
 }
 
-func getTemplate(name string) (string, error) {
-	content, err := ioutil.ReadFile("./templates/" + name)
+// Either I wasn't looking properly or it's pretty ridiculous. The Go libraries
+// do not provide a reliable way to determine the root path of the repository.
+// Using os.Getwd() the current path can be determined but it differs depending
+// on whether I start the application or my test cases.
+func getRepositoryRootPath() string {
+	return os.Getenv("APP_ROOT_PATH")
+}
+
+func getTemplate(root string, name string) (string, error) {
+	fmt.Println("root: " + root + "/templates/" + name)
+	content, err := ioutil.ReadFile(root + "/templates/" + name)
 	if err != nil {
-		return "", err
+		fmt.Println("FUCK")
+		return "", fmt.Errorf(root+"/templates/"+name+" %w", err)
 	}
 	return string(content), nil
 }
