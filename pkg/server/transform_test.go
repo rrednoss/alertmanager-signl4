@@ -21,16 +21,7 @@ func TestTransformAlert(t *testing.T) {
 			expectedOutput: `{"z": "Lorem Ipsum"}`,
 		},
 		{
-			name:  "should transform to broken json with invalid gotpl",
-			gotpl: `{"z": "{{ index . "abc" }}"}`,
-			input: map[string]interface{}{
-				"abc": "Lorem Ipsum",
-				"def": "Ipsum Lorem",
-			},
-			expectedOutput: `{"z": "<no value>"}`,
-		},
-		{
-			name:  "should transform to broken json with invalid input",
+			name:  "should transform to broken json with mismatching gotpl",
 			gotpl: `{"z": "{{ index . "x" }}"}`,
 			input: map[string]interface{}{
 				"abc": "Lorem Ipsum",
