@@ -58,18 +58,15 @@ func handlePOSTHeader(w http.ResponseWriter, r *http.Request) error {
 func handlePOSTBody(w http.ResponseWriter, r *http.Request) error {
 	alert, err := decodeBody(r.Body)
 	if err != nil {
-		fmt.Println("FUCK 1")
 		return err
 	}
 	root := getRepositoryRootPath()
 	gotpl, err := getTemplate(root, "signl4.gotpl")
 	if err != nil {
-		fmt.Println("FUCK 2")
 		return err
 	}
 	tAlert, err := transform(gotpl, alert)
 	if err != nil {
-		fmt.Println("FUCK 3")
 		return err
 	}
 
@@ -84,7 +81,6 @@ func decodeBody(body io.ReadCloser) (map[string]interface{}, error) {
 
 	d := json.NewDecoder(body)
 	if err := d.Decode(&alert); err != nil {
-		fmt.Println("FUCK 4")
 		return nil, err
 	}
 	return alert, nil
@@ -99,10 +95,8 @@ func getRepositoryRootPath() string {
 }
 
 func getTemplate(root string, name string) (string, error) {
-	fmt.Println("root: " + root + "/templates/" + name)
 	content, err := ioutil.ReadFile(root + "/templates/" + name)
 	if err != nil {
-		fmt.Println("FUCK")
 		return "", fmt.Errorf(root+"/templates/"+name+" %w", err)
 	}
 	return string(content), nil
