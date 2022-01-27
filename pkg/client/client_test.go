@@ -2,8 +2,10 @@ package client
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -29,29 +31,32 @@ func TestSendAlert(t *testing.T) {
 
 	sc := Signl4Client{
 		Client:     server.Client(),
-		FiringURL:  "",
-		ResolveURL: "",
+		FiringURL:  "https://go.dev/",
+		ResolveURL: "https://go.dev/",
 	}
 
 	tests := []struct {
 		name                   string
 		status                 AlertStatus
+		body                   io.Reader
 		expectedHTTPStatusCode int
 	}{
 		{
 			name:                   "should successfully fire an alert",
 			status:                 Firing,
+			body:                   strings.NewReader("{\"key\":\"value\"}"),
 			expectedHTTPStatusCode: http.StatusOK,
 		},
 		{
 			name:                   "should successfully resolve an alert",
 			status:                 Resolved,
+			body:                   strings.NewReader("{\"key\":\"value\"}"),
 			expectedHTTPStatusCode: http.StatusOK,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			statusCode, err := sc.SendAlert(tt.status)
+			statusCode, err := sc.SendAlert(tt.status, tt.body)
 			if err != nil {
 				t.Errorf("unexpected error during alert sending %v", err)
 			}

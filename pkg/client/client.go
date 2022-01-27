@@ -1,6 +1,7 @@
 package client
 
 import (
+	"io"
 	"net/http"
 	"time"
 )
@@ -18,7 +19,19 @@ type Signl4Client struct {
 	ResolveURL string
 }
 
-func (s Signl4Client) SendAlert(status AlertStatus) (int, error) {
+func (s Signl4Client) SendAlert(status AlertStatus, body io.Reader) (int, error) {
+	req, err := http.NewRequest(http.MethodPost, s.FiringURL, body)
+	if err != nil {
+		return 0, err
+	}
+	req.Header.Add("Content-Type", "application/json")
+	res, err := s.Client.Do(req)
+	if err != nil {
+		return 0, err
+	}
+	if res.StatusCode == http.StatusOK {
+		return res.StatusCode, nil
+	}
 	return 0, nil
 }
 
