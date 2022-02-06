@@ -1,0 +1,5 @@
+{
+    "name": "{{ index . "name" }}",
+    "severity": "{{ index . "severity" }}",
+    "status": "{{ index . "status" }}"
+} 
