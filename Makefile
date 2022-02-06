@@ -26,5 +26,5 @@ build: vet
 .PHONY:build
 
 deploy: build
-	docker push rrednoss/alertmanager-signl4:0.1.0 .
+	docker push rrednoss/alertmanager-signl4:0.1.0
 .PHONY: deploy

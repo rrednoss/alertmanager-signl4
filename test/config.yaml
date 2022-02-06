@@ -1,0 +1,6 @@
+---
+signl4:
+  statusKey: "status"
+  teamSecret: "random"
+  template: |-
+    { }

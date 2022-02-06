@@ -95,9 +95,9 @@ func getRepositoryRootPath() string {
 }
 
 func getTemplate(root string, name string) (string, error) {
-	content, err := ioutil.ReadFile(root + "/templates/" + name)
+	content, err := ioutil.ReadFile(root + "/test/" + name)
 	if err != nil {
-		return "", fmt.Errorf(root+"/templates/"+name+" %w", err)
+		return "", fmt.Errorf(root+"/test/"+name+" %w", err)
 	}
 	return string(content), nil
 }
