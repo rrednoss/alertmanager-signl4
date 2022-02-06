@@ -63,6 +63,13 @@ affinity: {}
 
 # Application specific configuration.
 signl4:
+  # The key in your Alertmanager payload that indicates wether its a new alert or a resolved
+  # one. Its value must either be firing or resolved.
+  statusKey: "<enter-your-status-key>"
+
+  # Enter your personal Signl4 Team Secret.
+  teamSecret: "<enter-your-secret>"
+
   # The alert manager payload is quite heavy. If you don't convert it, the Signl4 app will
   # contain a lot of information. Specify the fields you want to filter and send to the app.
   #
@@ -74,10 +81,3 @@ signl4:
         "severity": "{{ index . "severity" }}",
         "status": "{{ index . "status" }}"
     }
-
-  # Define the URLs to your SIGNL4 webhook.
-  url:
-    # The URL to create new alerts.
-    firing: https://localhost:1234
-    # The URL to close/resolve alerts.
-    resolving: https://localhost:1234
