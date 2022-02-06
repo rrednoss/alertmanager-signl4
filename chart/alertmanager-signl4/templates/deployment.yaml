@@ -49,7 +49,7 @@ spec:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
             - name: config
-              mountPath: "/config.yaml"
+              mountPath: "/conf"
               readOnly: true
       {{- with .Values.nodeSelector }}
       nodeSelector:

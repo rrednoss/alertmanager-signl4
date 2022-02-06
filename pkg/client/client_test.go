@@ -66,3 +66,36 @@ func TestSendAlert(t *testing.T) {
 		})
 	}
 }
+
+func TestGetUrl(t *testing.T) {
+	sc := Signl4Client{
+		Client:     nil,
+		FiringURL:  "https://go.dev/firing",
+		ResolveURL: "https://go.dev/resolve",
+	}
+
+	tests := []struct {
+		name        string
+		status      AlertStatus
+		expectedUrl string
+	}{
+		{
+			name:        "should get firing URL",
+			status:      Firing,
+			expectedUrl: "https://go.dev/firing",
+		},
+		{
+			name:        "should get resolve URL",
+			status:      Resolved,
+			expectedUrl: "https://go.dev/resolve",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			url := sc.getUrl(tt.status)
+			if url != tt.expectedUrl {
+				t.Errorf("got %s, want %s", url, tt.expectedUrl)
+			}
+		})
+	}
+}

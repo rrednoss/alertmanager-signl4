@@ -1,8 +1,8 @@
 apiVersion: v1
 data:
-  config.yaml: |
+  signl4.yaml: |
     ---
-    url:
+    signl4:
       {{- toYaml .Values.signl4 | nindent 6 }}
 kind: ConfigMap
 metadata:

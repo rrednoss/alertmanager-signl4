@@ -1,4 +1,4 @@
-package server
+package config
 
 import (
 	"testing"
@@ -33,7 +33,7 @@ func TestReadConfig(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			config, err := ReadConfig(tt.path)
+			config, err := readConfig(tt.path)
 			if err != nil && err.Error() != tt.expectedErrMsg {
 				t.Errorf("got %s, want %s", err.Error(), tt.expectedErrMsg)
 			}

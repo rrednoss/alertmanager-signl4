@@ -2,7 +2,7 @@ replicaCount: 1
 
 image:
   repository: rrednoss/alertmanager-signl4
-  pullPolicy: IfNotPresent
+  pullPolicy: Always # IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""
 
@@ -63,9 +63,18 @@ affinity: {}
 
 # Application specific configuration.
 signl4:
+  # TODO (rrednoss): Unmarshalling into boolean doesn't work so easily.
+  # https://github.com/go-yaml/yaml/issues/808
+  # https://github.com/go-yaml/yaml/issues/214
+  #
+  # The application sends an HTTP POST request to the Signl4 webhook. If this option is set
+  # to false, the request is aborted if the TLS setup is insecure (e.g. an unknown authority
+  # signs the server's certificate).
+  # allowInsecureTLSConfig: true
+
   # The key in your Alertmanager payload that indicates wether its a new alert or a resolved
-  # one. Its value must either be firing or resolved.
-  statusKey: "<enter-your-status-key>"
+  # one. Its value must either be 'Firing' or 'Resolved'.
+  statusKey: "status"
 
   # Enter your personal Signl4 Team Secret.
   teamSecret: "<enter-your-secret>"

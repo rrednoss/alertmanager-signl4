@@ -5,13 +5,21 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
+	"log"
 	"net/http"
-	"os"
+	"strings"
 	"time"
+
+	"github.com/rrednoss/alertmanager-signl4/pkg/client"
+	"github.com/rrednoss/alertmanager-signl4/pkg/config"
 )
 
+var sc client.Signl4Client = client.NewSignl4Client()
+
 func NewServer() *http.Server {
+	// initialize config
+	config.Signl4 = config.NewSignl4Config()
+
 	s := &http.Server{
 		Addr:         ":9095",
 		ReadTimeout:  10 * time.Second,
@@ -41,7 +49,7 @@ func handlePOST(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := handlePOSTBody(w, r); err != nil {
-		http.Error(w, fmt.Sprintf("error processing the request %s", err.Error()), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("error processing the request, %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
 }
@@ -60,18 +68,24 @@ func handlePOSTBody(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	root := getRepositoryRootPath()
-	gotpl, err := getTemplate(root, "signl4.gotpl")
 	if err != nil {
 		return err
 	}
-	tAlert, err := transform(gotpl, alert)
+	tAlert, err := transform(config.Signl4.Template, alert)
 	if err != nil {
 		return err
 	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(tAlert))
+	status, err := determineStatus(alert)
+	if err != nil {
+		return err
+	}
+	code, err := sc.SendAlert(status, strings.NewReader(tAlert))
+	if err != nil {
+		log.Println(err.Error())
+		w.WriteHeader(code)
+		return err
+	}
+	w.WriteHeader(code)
 
 	return nil
 }
@@ -86,18 +100,13 @@ func decodeBody(body io.ReadCloser) (map[string]interface{}, error) {
 	return alert, nil
 }
 
-// Either I wasn't looking properly or it's pretty ridiculous. The Go libraries
-// do not provide a reliable way to determine the root path of the repository.
-// Using os.Getwd() the current path can be determined but it differs depending
-// on whether I start the application or my test cases.
-func getRepositoryRootPath() string {
-	return os.Getenv("APP_ROOT_PATH")
-}
-
-func getTemplate(root string, name string) (string, error) {
-	content, err := ioutil.ReadFile(root + "/test/" + name)
-	if err != nil {
-		return "", fmt.Errorf(root+"/test/"+name+" %w", err)
+func determineStatus(alert map[string]interface{}) (client.AlertStatus, error) {
+	if v, ok := alert[config.Signl4.StatusKey]; ok {
+		if v == "Firing" {
+			return client.Firing, nil
+		} else if v == "Resolved" {
+			return client.Resolved, nil
+		}
 	}
-	return string(content), nil
+	return client.Unknown, fmt.Errorf("couldn't determine alert status")
 }
