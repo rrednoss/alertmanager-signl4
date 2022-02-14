@@ -2,8 +2,7 @@ apiVersion: v1
 data:
   signl4.yaml: |
     ---
-    signl4:
-      {{- toYaml .Values.signl4 | nindent 6 }}
+    {{- toYaml .Values.signl4 | nindent 4 }}
 kind: ConfigMap
 metadata:
   name: config

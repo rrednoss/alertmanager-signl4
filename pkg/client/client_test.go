@@ -10,7 +10,7 @@ import (
 )
 
 func TestSendAlert(t *testing.T) {
-	server := httptest.NewServer(
+	s := httptest.NewServer(
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if r.Method != "POST" {
 				http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -28,9 +28,8 @@ func TestSendAlert(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte("successfully received request"))
 		}))
-
-	sc := Signl4Client{
-		Client:     server.Client(),
+	ac := Signl4Client{
+		Client:     s.Client(),
 		FiringURL:  "https://go.dev/",
 		ResolveURL: "https://go.dev/",
 	}
@@ -56,7 +55,7 @@ func TestSendAlert(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			statusCode, err := sc.SendAlert(tt.status, tt.body)
+			statusCode, err := ac.SendAlert(tt.status, tt.body)
 			if err != nil {
 				t.Errorf("unexpected error during alert sending %v", err)
 			}
@@ -68,7 +67,7 @@ func TestSendAlert(t *testing.T) {
 }
 
 func TestGetUrl(t *testing.T) {
-	sc := Signl4Client{
+	ac := Signl4Client{
 		Client:     nil,
 		FiringURL:  "https://go.dev/firing",
 		ResolveURL: "https://go.dev/resolve",
@@ -92,7 +91,7 @@ func TestGetUrl(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			url := sc.getUrl(tt.status)
+			url := ac.getUrl(tt.status)
 			if url != tt.expectedUrl {
 				t.Errorf("got %s, want %s", url, tt.expectedUrl)
 			}

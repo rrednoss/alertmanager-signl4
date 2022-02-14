@@ -2,10 +2,15 @@ package client
 
 import (
 	"crypto/tls"
+	"fmt"
 	"io"
 	"net/http"
 	"time"
 )
+
+type Client interface {
+	SendAlert(status AlertStatus, body io.Reader) (int, error)
+}
 
 type AlertStatus int
 
@@ -21,40 +26,7 @@ type Signl4Client struct {
 	ResolveURL string
 }
 
-func (s Signl4Client) SendAlert(status AlertStatus, body io.Reader) (int, error) {
-	req, err := http.NewRequest(http.MethodPost, s.getUrl(status), body)
-	if err != nil {
-		return 0, err
-	}
-	req.Header.Add("Content-Type", "application/json")
-	res, err := s.Client.Do(req)
-	if err != nil {
-		return 0, err
-	}
-	if res.StatusCode == http.StatusOK {
-		return res.StatusCode, nil
-	}
-	return res.StatusCode, nil
-}
-
-func (s Signl4Client) getUrl(status AlertStatus) string {
-	if status == Firing {
-		return s.FiringURL
-	} else if status == Resolved {
-		return s.ResolveURL
-	}
-	return ""
-}
-
 func NewSignl4Client() Signl4Client {
-	// var tr = &http.Transport{}
-
-	// if config.Signl4.AllowInsecureTLSConfig == "true" {
-	// 	tr = &http.Transport{
-	// 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	// 	}
-	// }
-
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
@@ -67,4 +39,31 @@ func NewSignl4Client() Signl4Client {
 		FiringURL:  "",
 		ResolveURL: "",
 	}
+}
+
+func (sc Signl4Client) SendAlert(status AlertStatus, body io.Reader) (int, error) {
+	req, err := http.NewRequest(http.MethodPost, sc.getUrl(status), body)
+	if err != nil {
+		return 0, err
+	}
+	req.Header.Add("Content-Type", "application/json")
+	fmt.Println("Send alert to ", sc.getUrl(status))
+	fmt.Println(req)
+	res, err := sc.Client.Do(req)
+	if err != nil {
+		return 0, err
+	}
+	if res.StatusCode == http.StatusOK {
+		return res.StatusCode, nil
+	}
+	return res.StatusCode, nil
+}
+
+func (sc Signl4Client) getUrl(status AlertStatus) string {
+	if status == Firing {
+		return sc.FiringURL
+	} else if status == Resolved {
+		return sc.ResolveURL
+	}
+	return ""
 }

@@ -14,47 +14,61 @@ import (
 	"github.com/rrednoss/alertmanager-signl4/pkg/config"
 )
 
-var sc client.Signl4Client = client.NewSignl4Client()
-
-func NewServer() *http.Server {
-	// initialize config
-	config.Signl4 = config.NewSignl4Config()
+func NewServer(alertHandler AlertHandler, healthHandler HealthHandler) *http.Server {
+	mux := http.NewServeMux()
+	mux.Handle("/v1/alert", alertHandler)
+	mux.Handle("/healthz", healthHandler)
 
 	s := &http.Server{
 		Addr:         ":9095",
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,
-		Handler:      http.HandlerFunc(handleAlert),
+		Handler:      mux,
 	}
 	return s
 }
 
-func handleAlert(w http.ResponseWriter, r *http.Request) {
+// The AlertHandler receives requests from the alert manager, transforms them depending on the configuration and
+// sends them to the Signl4 app afterwards.
+type AlertHandler struct {
+	config config.AppConfig
+	client client.Client
+}
+
+func NewAlertHandler(appConfig config.AppConfig, client client.Client) AlertHandler {
+	h := AlertHandler{
+		config: appConfig,
+		client: client,
+	}
+	return h
+}
+
+func (h AlertHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "HEAD":
-		handleHEAD(w, r)
+		h.handleHEAD(w, r)
 	case "POST":
-		handlePOST(w, r)
+		h.handlePOST(w, r)
 	default:
 		http.Error(w, fmt.Sprintf("the HTTP method %s is not allowed", r.Method), http.StatusMethodNotAllowed)
 	}
 }
 
-func handleHEAD(w http.ResponseWriter, r *http.Request) {
+func (h AlertHandler) handleHEAD(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func handlePOST(w http.ResponseWriter, r *http.Request) {
-	if err := handlePOSTHeader(w, r); err != nil {
+func (h AlertHandler) handlePOST(w http.ResponseWriter, r *http.Request) {
+	if err := h.handlePOSTHeader(w, r); err != nil {
 		return
 	}
-	if err := handlePOSTBody(w, r); err != nil {
+	if err := h.handlePOSTBody(w, r); err != nil {
 		http.Error(w, fmt.Sprintf("error processing the request, %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
 }
 
-func handlePOSTHeader(w http.ResponseWriter, r *http.Request) error {
+func (h AlertHandler) handlePOSTHeader(w http.ResponseWriter, r *http.Request) error {
 	headerContentType := r.Header.Get("Content-Type")
 	if headerContentType != "application/json" {
 		http.Error(w, "invalid Content-Type header", http.StatusUnsupportedMediaType)
@@ -63,23 +77,20 @@ func handlePOSTHeader(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func handlePOSTBody(w http.ResponseWriter, r *http.Request) error {
-	alert, err := decodeBody(r.Body)
+func (h AlertHandler) handlePOSTBody(w http.ResponseWriter, r *http.Request) error {
+	alert, err := h.decodeBody(r.Body)
 	if err != nil {
 		return err
 	}
+	tAlert, err := transform(h.config.Template, alert)
 	if err != nil {
 		return err
 	}
-	tAlert, err := transform(config.Signl4.Template, alert)
+	status, err := h.determineStatus(alert)
 	if err != nil {
 		return err
 	}
-	status, err := determineStatus(alert)
-	if err != nil {
-		return err
-	}
-	code, err := sc.SendAlert(status, strings.NewReader(tAlert))
+	code, err := h.client.SendAlert(status, strings.NewReader(tAlert))
 	if err != nil {
 		log.Println(err.Error())
 		w.WriteHeader(code)
@@ -90,7 +101,7 @@ func handlePOSTBody(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func decodeBody(body io.ReadCloser) (map[string]interface{}, error) {
+func (h AlertHandler) decodeBody(body io.ReadCloser) (map[string]interface{}, error) {
 	var alert map[string]interface{}
 
 	d := json.NewDecoder(body)
@@ -100,8 +111,8 @@ func decodeBody(body io.ReadCloser) (map[string]interface{}, error) {
 	return alert, nil
 }
 
-func determineStatus(alert map[string]interface{}) (client.AlertStatus, error) {
-	if v, ok := alert[config.Signl4.StatusKey]; ok {
+func (h AlertHandler) determineStatus(alert map[string]interface{}) (client.AlertStatus, error) {
+	if v, ok := alert[h.config.StatusKey]; ok {
 		if v == "Firing" {
 			return client.Firing, nil
 		} else if v == "Resolved" {
@@ -109,4 +120,16 @@ func determineStatus(alert map[string]interface{}) (client.AlertStatus, error) {
 		}
 	}
 	return client.Unknown, fmt.Errorf("couldn't determine alert status")
+}
+
+// The HealthHandler is used for the Kubernetes Liveness and Readiness probes. It checks for the StatusCode 2xx.
+// The output "OK" is intended to increase the comfort on the developer and operator side.
+type HealthHandler struct{}
+
+func NewHealthHandler() HealthHandler {
+	return HealthHandler{}
+}
+
+func (h HealthHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	w.Write([]byte("OK"))
 }
