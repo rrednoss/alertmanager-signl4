@@ -21,6 +21,11 @@ test:
 	go test ./...
 .PHONY:test
 
+testcoverage:
+	go test -v -cover -coverprofile=c.out ./...
+	go tool cover -html=c.out
+.PHONY:testcoverage
+
 build: vet
 	docker build -t rrednoss/alertmanager-signl4:0.1.1 .
 .PHONY:build
@@ -30,6 +35,7 @@ deploy: build
 .PHONY: deploy
 
 k8sDeploy: deploy
+	helm delete alertmanager-signl4
 	helm upgrade -i -n alertmanager-signl4 alertmanager-signl4 ./chart/alertmanager-signl4
 .PHONY: k8sDeploy
 

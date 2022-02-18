@@ -8,6 +8,7 @@ import (
 
 type AppConfig struct {
 	AllowInsecureTLSConfig bool   `yaml:"allowInsecureTLSConfig"` // TODO (rednoss): Evaluate!
+	GroupKey               string `yaml:"groupKey"`
 	StatusKey              string `yaml:"statusKey"`
 	TeamSecret             string `yaml:"teamSecret"`
 	Template               string `yaml:"template"`

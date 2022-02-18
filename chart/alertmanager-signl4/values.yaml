@@ -71,12 +71,16 @@ signl4:
   # to false, the request is aborted if the TLS setup is insecure (e.g. an unknown authority
   # signs the server's certificate).
   # allowInsecureTLSConfig: true
+  
+  # The group key is used to uniquely identify an alert. This key must also be present in the
+  # signl4.template setting.
+  groupKey: "groupKey"
 
   # The key in your Alertmanager payload that indicates wether its a new alert or a resolved
   # one. Its value must either be 'Firing' or 'Resolved'.
   statusKey: "status"
 
-  # Enter your personal Signl4 Team Secret.
+  # Enter your personal Signl4 Team Secret. This is required to send the alerts to your app.
   teamSecret: "<enter-your-secret>"
 
   # The alert manager payload is quite heavy. If you don't convert it, the Signl4 app will
@@ -86,6 +90,7 @@ signl4:
   # be familiar with Go's template syntax from tools like Helm.
   template: |-
     {
+        "groupKey": "{{ index . "groupKey" }},
         "name": "{{ index . "name" }}",
         "severity": "{{ index . "severity" }}",
         "status": "{{ index . "status" }}"
