@@ -8,5 +8,5 @@ Transforms the Alertmanager payload to a more SIGNL4 friendly one.
 * [ ] Add context timeout so that request aren't stuck forever inside the app if something goes wrong.
 * [ ] Add buffered channel to accept only a defined amount of parallel requests.
 * [ ] Add TLS Support.
-* [ ] Add /healthz endpoint for liveness and readiness probes.
+* [x] Add /healthz endpoint for liveness and readiness probes.
 * [ ] Add /metrics endpoint to be monitored by Prometheus.
