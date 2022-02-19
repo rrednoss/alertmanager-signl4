@@ -35,7 +35,6 @@ deploy: build
 .PHONY: deploy
 
 k8sDeploy: deploy
-	helm delete alertmanager-signl4
 	helm upgrade -i -n alertmanager-signl4 alertmanager-signl4 ./chart/alertmanager-signl4
 .PHONY: k8sDeploy
 

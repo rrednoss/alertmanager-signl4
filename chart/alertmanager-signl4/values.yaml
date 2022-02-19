@@ -36,7 +36,7 @@ service:
   type: ClusterIP
   port: 80
 
-resources: {}
+resources:
   limits:
     cpu: 100m
     memory: 128Mi
@@ -66,7 +66,7 @@ signl4:
   # The application sends an HTTP POST request to the Signl4 webhook. If this option is set
   # to false, the request is aborted if the TLS setup is insecure (e.g. an unknown authority
   # signs the server's certificate).
-  # allowInsecureTLSConfig: true
+  allowInsecureTLSConfig: false
   
   # The group key is used to uniquely identify an alert. This key must also be present in the
   # signl4.template setting.

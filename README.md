@@ -19,7 +19,7 @@ $ helm upgrade --install --namespace alertmanager-signl4 -f values.yaml alertman
 ## Open Points
 * [x] Write documentation on how to use and configure the app.
 * [x] Fix broken unit tests. The code needs to be refactored in some way that the Server has its Client as dependency.
-* [ ] Add more logging information to understand what the app is doing.
+* [x] Add structured logging to understand what the app is doing.
 * [ ] Add context timeout so that request aren't stuck forever inside the app if something goes wrong.
 * [ ] Add buffered channel to accept only a defined amount of parallel requests.
 * [ ] Add TLS Support.

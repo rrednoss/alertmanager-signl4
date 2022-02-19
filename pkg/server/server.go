@@ -5,10 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"strings"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/rrednoss/alertmanager-signl4/pkg/client"
 	"github.com/rrednoss/alertmanager-signl4/pkg/config"
@@ -44,6 +45,7 @@ func NewAlertHandler(appConfig config.AppConfig, client client.Client) AlertHand
 }
 
 func (h AlertHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	log.Info("received new AlertHandler request")
 	switch r.Method {
 	case "HEAD":
 		h.handleHEAD(w, r)
@@ -71,6 +73,7 @@ func (h AlertHandler) handlePOST(w http.ResponseWriter, r *http.Request) {
 func (h AlertHandler) handlePOSTHeader(w http.ResponseWriter, r *http.Request) error {
 	headerContentType := r.Header.Get("Content-Type")
 	if headerContentType != "application/json" {
+		log.Error("invalid alert request Content-Type header")
 		http.Error(w, "invalid Content-Type header", http.StatusUnsupportedMediaType)
 		return errors.New("invalid Content-Type header")
 	}
@@ -92,12 +95,10 @@ func (h AlertHandler) handlePOSTBody(w http.ResponseWriter, r *http.Request) err
 	}
 	code, err := h.client.SendAlert(status, strings.NewReader(tAlert))
 	if err != nil {
-		log.Println(err.Error())
 		w.WriteHeader(code)
 		return err
 	}
 	w.WriteHeader(code)
-
 	return nil
 }
 
@@ -106,19 +107,24 @@ func (h AlertHandler) decodeBody(body io.ReadCloser) (map[string]interface{}, er
 
 	d := json.NewDecoder(body)
 	if err := d.Decode(&alert); err != nil {
+		log.Error("couldn't decode alert request")
 		return nil, err
 	}
+	log.Info("decoded alert")
 	return alert, nil
 }
 
 func (h AlertHandler) determineStatus(alert map[string]interface{}) (client.AlertStatus, error) {
 	if v, ok := alert[h.config.StatusKey]; ok {
 		if v == "Firing" {
+			log.Info("determined alert status firing")
 			return client.Firing, nil
 		} else if v == "Resolved" {
+			log.Info("determined alert status resolving")
 			return client.Resolved, nil
 		}
 	}
+	log.Error("couldn't determine alert status")
 	return client.Unknown, fmt.Errorf("couldn't determine alert status")
 }
 
@@ -131,5 +137,6 @@ func NewHealthHandler() HealthHandler {
 }
 
 func (h HealthHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	log.Debug("received new HealthHandler request")
 	w.Write([]byte("OK"))
 }

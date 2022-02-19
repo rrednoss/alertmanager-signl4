@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"time"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/rrednoss/alertmanager-signl4/pkg/config"
 )
 
@@ -59,9 +61,11 @@ func (sc Signl4Client) SendAlert(status AlertStatus, body io.Reader) (int, error
 	req.Header.Add("Content-Type", "application/json")
 	res, err := sc.Client.Do(req)
 	if err != nil {
+		log.Error("couldn't send transformed alert")
 		return 0, err
 	}
-	if res.StatusCode == http.StatusOK {
+	if res.StatusCode >= 200 && res.StatusCode <= 299 {
+		log.Info("sent transformed alert")
 		return res.StatusCode, nil
 	}
 	return res.StatusCode, nil
