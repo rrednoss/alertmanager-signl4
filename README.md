@@ -27,12 +27,13 @@ The following custom metrics are provided:
 * `http_response_time_seconds`
 * `alerts_send_total`
 
-## Open Points
-* [x] Write documentation on how to use and configure the app.
-* [x] Fix broken unit tests. The code needs to be refactored in some way that the Server has its Client as dependency.
-* [x] Add structured logging to understand what the app is doing.
-* [ ] Add context timeout so that request aren't stuck forever inside the app if something goes wrong.
-* [ ] Add buffered channel to accept only a defined amount of parallel requests.
+## Future Improvements
 * [ ] Add TLS Support.
-* [x] Add /healthz endpoint for liveness and readiness probes.
-* [x] Add /metrics endpoint to be monitored by Prometheus.
+* [ ] Add Tracing Support.
+* [ ] Limit the number of simultaneous performing requests.
+* [ ] Limit the number of waiting/queued requests.
+* [ ] Limit how long a single requests can run.
+
+### Reflections
+* Adding logging and metrics information in some methods makes the code sometimes quite messy. There might be a more elegant or uniform way of doing this.
+* This application uses the logrus package for structured logging. It is in maintenance-mode. It might be worse to log for an alternative solution like Zap or Apex.
