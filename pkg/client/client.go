@@ -7,9 +7,20 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/rrednoss/alertmanager-signl4/pkg/config"
+)
+
+// Prometheus metric that indicates the number of transformed alerts send to the Signl4 webhook.
+// This metric can be used to understand the flow of alerts through this application.
+var alertsSend = prometheus.NewCounterVec(
+	prometheus.CounterOpts{
+		Name: "alerts_send_total",
+		Help: "Number of alerts send to Signl4 webhook.",
+	},
+	[]string{},
 )
 
 type Client interface {
@@ -31,6 +42,8 @@ type Signl4Client struct {
 }
 
 func NewSignl4Client(config config.AppConfig) Signl4Client {
+	prometheus.Register(alertsSend)
+
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
@@ -66,9 +79,10 @@ func (sc Signl4Client) SendAlert(status AlertStatus, body io.Reader) (int, error
 	}
 	if res.StatusCode >= 200 && res.StatusCode <= 299 {
 		log.Info("sent transformed alert")
-		return res.StatusCode, nil
+		alertsSend.WithLabelValues().Inc()
+		return http.StatusOK, nil
 	}
-	return res.StatusCode, nil
+	return http.StatusInternalServerError, nil
 }
 
 func (sc Signl4Client) getUrl(status AlertStatus) string {

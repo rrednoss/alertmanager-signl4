@@ -16,6 +16,17 @@ $ helm repo add alertmanager-signl4 <TODO: Add Github URL!>
 $ helm upgrade --install --namespace alertmanager-signl4 -f values.yaml alertmanager-signl4 alertmanager-signl4/alertmanager-signl4
 ```
 
+## Observability
+One aspect of cloud-native applications is observability.
+It can be defined as a measure of how well the internal state of the application can be observed from its output.
+For this reason, this application provides structured logging and Prometheus-enabled metrics that can be received via the `/metrics` endpoint.
+The following custom metrics are provided:
+
+* `http_total_requests`
+* `http_response_status_total`
+* `http_response_time_seconds`
+* `alerts_send_total`
+
 ## Open Points
 * [x] Write documentation on how to use and configure the app.
 * [x] Fix broken unit tests. The code needs to be refactored in some way that the Server has its Client as dependency.
@@ -24,4 +35,4 @@ $ helm upgrade --install --namespace alertmanager-signl4 -f values.yaml alertman
 * [ ] Add buffered channel to accept only a defined amount of parallel requests.
 * [ ] Add TLS Support.
 * [x] Add /healthz endpoint for liveness and readiness probes.
-* [ ] Add /metrics endpoint to be monitored by Prometheus.
+* [x] Add /metrics endpoint to be monitored by Prometheus.

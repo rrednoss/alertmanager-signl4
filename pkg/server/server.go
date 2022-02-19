@@ -9,16 +9,53 @@ import (
 	"strings"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/rrednoss/alertmanager-signl4/pkg/client"
 	"github.com/rrednoss/alertmanager-signl4/pkg/config"
 )
 
+// Prometheus metric that indicates the number of requests received.
+// This metric can be used to understand the total load of this application.
+var totalRequests = prometheus.NewCounterVec(
+	prometheus.CounterOpts{
+		Name: "http_requests_total",
+		Help: "Number of http requests.",
+	},
+	[]string{"method", "path"},
+)
+
+// Prometheus metric that indicates the number of individual status codes.
+// This metric can be used to understand how many requests were processed correctly.
+var responseStatus = prometheus.NewCounterVec(
+	prometheus.CounterOpts{
+		Name: "http_response_status_total",
+		Help: "Number of http response status.",
+	},
+	[]string{"status"},
+)
+
+// Prometheus metric that indicates how long requests need to be fullfilled.
+// This metric can be used to measure the performance of the app and if the Kubernetes resources need to be adjusted.
+var httpDuration = promauto.NewHistogramVec(
+	prometheus.HistogramOpts{
+		Name: "http_response_time_seconds",
+		Help: "Duration of HTTP requests",
+	}, []string{"path"},
+)
+
 func NewServer(alertHandler AlertHandler, healthHandler HealthHandler) *http.Server {
+	prometheus.Register(totalRequests)
+	prometheus.Register(responseStatus)
+	prometheus.Register(httpDuration)
+
 	mux := http.NewServeMux()
 	mux.Handle("/v1/alert", alertHandler)
 	mux.Handle("/healthz", healthHandler)
+	mux.Handle("/metrics", promhttp.Handler())
 
 	s := &http.Server{
 		Addr:         ":9095",
@@ -45,7 +82,11 @@ func NewAlertHandler(appConfig config.AppConfig, client client.Client) AlertHand
 }
 
 func (h AlertHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	log.Info("received new AlertHandler request")
+	log.Info(fmt.Sprintf("received new %s request", r.Method))
+
+	totalRequests.WithLabelValues(r.Method, r.URL.Path).Inc()
+	timer := prometheus.NewTimer(httpDuration.WithLabelValues(r.URL.Path))
+
 	switch r.Method {
 	case "HEAD":
 		h.handleHEAD(w, r)
@@ -53,11 +94,15 @@ func (h AlertHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.handlePOST(w, r)
 	default:
 		http.Error(w, fmt.Sprintf("the HTTP method %s is not allowed", r.Method), http.StatusMethodNotAllowed)
+		responseStatus.WithLabelValues(fmt.Sprintf("%d", http.StatusMethodNotAllowed))
 	}
+
+	timer.ObserveDuration()
 }
 
 func (h AlertHandler) handleHEAD(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
+	responseStatus.WithLabelValues(fmt.Sprintf("%d", http.StatusOK)).Inc()
 }
 
 func (h AlertHandler) handlePOST(w http.ResponseWriter, r *http.Request) {
@@ -99,6 +144,7 @@ func (h AlertHandler) handlePOSTBody(w http.ResponseWriter, r *http.Request) err
 		return err
 	}
 	w.WriteHeader(code)
+	responseStatus.WithLabelValues(fmt.Sprintf("%d", code)).Inc()
 	return nil
 }
 
@@ -136,7 +182,7 @@ func NewHealthHandler() HealthHandler {
 	return HealthHandler{}
 }
 
-func (h HealthHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+func (h HealthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log.Debug("received new HealthHandler request")
 	w.Write([]byte("OK"))
 }
