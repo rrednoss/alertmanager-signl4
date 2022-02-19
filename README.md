@@ -36,4 +36,4 @@ The following custom metrics are provided:
 
 ### Reflections
 * Adding logging and metrics information in some methods makes the code sometimes quite messy. There might be a more elegant or uniform way of doing this.
-* This application uses the logrus package for structured logging. It is in maintenance-mode. It might be worse to log for an alternative solution like Zap or Apex.
+* This application uses the logrus package for structured logging. It is in maintenance-mode. It might be worth to log for an alternative solution like Zap or Apex.
